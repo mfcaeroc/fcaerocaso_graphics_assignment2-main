@@ -1,8 +1,9 @@
 //---------------------------------------
-// Program: building3.cpp
-// Purpose: Demonstrate use of mouse callbacks to draw lines.
+// Program: lagrange.cpp
+// Purpose: Demonstrate curve fitting using
+//          Lagrange polynomials.
 // Author:  John Gauch
-// Date:    Spring 2012
+// Date:    Spring 2019
 //---------------------------------------
 #include <math.h>
 #include <stdio.h>
@@ -21,17 +22,14 @@
 #define MIN_Z_VIEW -50
 #define MAX_Z_VIEW 50
 #define MIN_X_SCREEN 0
-#define MAX_X_SCREEN 500
+#define MAX_X_SCREEN 800
 #define MIN_Y_SCREEN 0
-#define MAX_Y_SCREEN 500
-#define LINE_COUNT 1000
+#define MAX_Y_SCREEN 800
 
 // Global variables 
-int xangle = 10;
-int yangle = 15;
-int mode = 2;
-int count = 0;
-float point[LINE_COUNT][4];
+#define MAX_COUNT 10
+float Px[MAX_COUNT], Py[MAX_COUNT];
+int count = -1;
 
 //---------------------------------------
 // Init function for OpenGL
@@ -42,81 +40,8 @@ void init()
    glMatrixMode(GL_PROJECTION);
    glLoadIdentity();
    glOrtho(MIN_X_VIEW, MAX_X_VIEW, 
-      MIN_Y_VIEW, MAX_Y_VIEW, 
-      MIN_Z_VIEW, MAX_Z_VIEW);
+      MIN_Y_VIEW, MAX_Y_VIEW, MIN_Z_VIEW, MAX_Z_VIEW);
    glEnable(GL_DEPTH_TEST);
-}
-
-//---------------------------------------
-// Function to draw a zero thickness wall
-//---------------------------------------
-void wall(float x1, float y1, float x2, float y2)
-{
-   float z1 = 0;
-   float z2 = 10;
-
-   // Draw wall polygon
-   glColor3f(1.0, 0.0, 0.0);
-   glBegin(GL_POLYGON);
-   glVertex3f(x1, y1, z1);
-   glVertex3f(x2, y2, z1);
-   glVertex3f(x2, y2, z2);
-   glVertex3f(x1, y1, z2);
-   glEnd();
-
-   // Draw wall outline
-   glColor3f(1.0, 1.0, 1.0);
-   glBegin(GL_LINE_LOOP);
-   glVertex3f(x1, y1, z1);
-   glVertex3f(x2, y2, z1);
-   glVertex3f(x2, y2, z2);
-   glVertex3f(x1, y1, z2);
-   glEnd();
-}
-
-//---------------------------------------
-// Keyboard callback for OpenGL
-//---------------------------------------
-void keyboard(unsigned char key, int x, int y)
-{
-   // Update angles
-   if ((key == 'x') && (mode == 3))
-      xangle -= 5;
-   else if ((key == 'y') && (mode == 3))
-      yangle -= 5;
-   else if ((key == 'X') && (mode == 3))
-      xangle += 5;
-   else if ((key == 'Y') && (mode == 3))
-      yangle += 5;
-   else if (key == '2')
-      mode = 2;
-   else if (key == '3')
-      mode = 3;
-   else if (key == 'L')
-   {
-      // Load wall information from building.txt
-      FILE *fd = fopen("building.txt", "r");
-      if (fscanf(fd, "%d\n", &count) != 1)
-         printf("Error: could not execute fscanf command\n");
-      for (int i=0; i<count; i++)
-         if (fscanf(fd, "%f %f %f %f\n",
-            &point[i][0], &point[i][1], &point[i][2], &point[i][3]) != 4)
-            printf("Error: could not execute fscanf command\n");
-      fclose(fd);
-   }
-   else if (key == 'S')
-   {
-      // Save wall information in building.txt
-      FILE *fd = fopen("building.txt", "w");
-      fprintf(fd, "%d\n", count);
-      for (int i=0; i<count; i++)
-         fprintf(fd, "%f %f %f %f\n",
-            point[i][0], point[i][1], point[i][2], point[i][3]);
-      fclose(fd);
-   }
-   
-   // Redraw objects
-   glutPostRedisplay();
 }
 
 //---------------------------------------
@@ -125,7 +50,6 @@ void keyboard(unsigned char key, int x, int y)
 void mouse(int button, int state, int x, int y)
 {
    // Calculate scale factors
-   if (mode != 2) return;
    float x_scale = (MAX_X_VIEW - MIN_X_VIEW) / 
       (float)(MAX_X_SCREEN - MIN_X_SCREEN);
    float y_scale = (MIN_Y_VIEW - MAX_Y_VIEW) / 
@@ -134,16 +58,9 @@ void mouse(int button, int state, int x, int y)
    // Handle mouse down
    if (state == GLUT_DOWN)
    {
-      point[count][0] = MIN_X_VIEW + (x - MIN_X_SCREEN) * x_scale;
-      point[count][1] = MAX_Y_VIEW + (y - MIN_Y_SCREEN) * y_scale;
-   }
-
-   // Handle mouse up
-   else if (state == GLUT_UP) 
-   {
-      point[count][2] = MIN_X_VIEW + (x - MIN_X_SCREEN) * x_scale;
-      point[count][3] = MAX_Y_VIEW + (y - MIN_Y_SCREEN) * y_scale;
-      count++; 
+      if (count < MAX_COUNT) count++; 
+      Px[count] = MIN_X_VIEW + (x - MIN_X_SCREEN) * x_scale;
+      Py[count] = MAX_Y_VIEW + (y - MIN_Y_SCREEN) * y_scale;
       glutPostRedisplay();
    }
 }
@@ -154,15 +71,14 @@ void mouse(int button, int state, int x, int y)
 void motion(int x, int y)
 {
    // Calculate scale factors
-   if (mode != 2) return;
    float x_scale = (MAX_X_VIEW - MIN_X_VIEW) / 
       (float)(MAX_X_SCREEN - MIN_X_SCREEN);
    float y_scale = (MIN_Y_VIEW - MAX_Y_VIEW) / 
       (float)(MAX_Y_SCREEN - MIN_Y_SCREEN);
 
    // Handle mouse motion
-   point[count][2] = MIN_X_VIEW + (x - MIN_X_SCREEN) * x_scale;
-   point[count][3] = MAX_Y_VIEW + (y - MIN_Y_SCREEN) * y_scale;
+   Px[count] = MIN_X_VIEW + (x - MIN_X_SCREEN) * x_scale;
+   Py[count] = MAX_Y_VIEW + (y - MIN_Y_SCREEN) * y_scale;
    glutPostRedisplay();
 }
 
@@ -171,20 +87,39 @@ void motion(int x, int y)
 //---------------------------------------
 void display()
 {
-   // Incrementally rotate objects
    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
    glMatrixMode(GL_MODELVIEW);
    glLoadIdentity();
-   if (mode == 3)
-   {
-      glRotatef(xangle, 1.0, 0.0, 0.0);
-      glRotatef(yangle, 0.0, 1.0, 0.0);
-   }
 
-   // Draw all walls
+   // Draw control points
+   glColor3f(0.0, 1.0, 0.0);
+   glPointSize(3);
+   glBegin(GL_POINTS);
    for (int i=0; i<=count; i++)
-      if ((point[i][0] != point[i][2]) || (point[i][1] != point[i][3])) 
-         wall(point[i][0], point[i][1], point[i][2], point[i][3]);
+      glVertex2f(Px[i], Py[i]);
+   glEnd();
+
+   // Connect control points
+   glLineWidth(2);
+   glBegin(GL_LINE_STRIP);
+   for (int i=0; i<=count; i++)
+      glVertex2f(Px[i], Py[i]);
+   glEnd();
+    
+   glVertex2f(Px[count], Py[count]);
+   glEnd();
+    
+    //Draw polygon
+    glBegin(GL_POLYGON);
+    glColor3f(0.5, 0.0, 1.0);
+    glVertex2f(-0.5, -0.5);
+    glVertex2f(-0.5, 0.5);
+    glColor3f(0.5, 0.0, 1.0);
+    glVertex2f(0.5, 0.5);
+    glVertex2f(0.5, -0.5);
+    glEnd();
+   
+   
    glFlush();
 }
 
@@ -197,24 +132,16 @@ int main(int argc, char *argv[])
    glutInitWindowSize(MAX_Y_SCREEN, MAX_X_SCREEN);
    glutInitWindowPosition(MAX_Y_SCREEN/2, MAX_X_SCREEN/2);
    glutInitDisplayMode(GLUT_RGB | GLUT_SINGLE | GLUT_DEPTH);
-   glutCreateWindow("Building");
+   glutCreateWindow("Lagrange");
    glutDisplayFunc(display);
-   glutKeyboardFunc(keyboard);
    glutMouseFunc(mouse);
    glutMotionFunc(motion);
    init();
    printf("Keyboard commands:\n");
-   printf("   'x' - rotate x-axis -5 degrees\n");
-   printf("   'X' - rotate x-axis +5 degrees\n");
-   printf("   'y' - rotate y-axis -5 degrees\n");
-   printf("   'Y' - rotate y-axis +5 degrees\n");
-   printf("   '2' - enter 2D display mode\n");
-   printf("   '3' - enter 3D display mode\n");
-   printf("   'L' - load building.txt file\n");
-   printf("   'S' - save building.txt file\n");
+   printf("   TBA\n");
    printf("Mouse operations:\n");
    printf("   'mouse down' - start drawing line\n");
-   printf("   'mouse motion' - draw rubber-band line\n");
+   //rintf("   'mouse motion' - draw rubber-band line\n");
    printf("   'mouse up' - finish drawing line\n");
    glutMainLoop();
    return 0;
