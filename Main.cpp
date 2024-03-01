@@ -1,9 +1,8 @@
 //---------------------------------------
-// Program: lagrange.cpp
-// Purpose: Demonstrate curve fitting using
-//          Lagrange polynomials.
-// Author:  John Gauch
-// Date:    Spring 2019
+// Program: Computer Graphics Project 2
+// Purpose: Display a flying object along a user generated path.
+// Author:  Fernanda Caero
+// Date:    3/01/2024
 //---------------------------------------
 #include <math.h>
 #include <stdio.h>
@@ -27,9 +26,14 @@
 #define MAX_Y_SCREEN 800
 
 // Global variables 
-#define MAX_COUNT 10
+#define MAX_COUNT 20
 float Px[MAX_COUNT], Py[MAX_COUNT];
+int transX, transY;
 int count = -1;
+bool startSquare = false;
+float place [MAX_COUNT][MAX_COUNT];
+
+int position = 0;
 
 //---------------------------------------
 // Init function for OpenGL
@@ -61,25 +65,22 @@ void mouse(int button, int state, int x, int y)
       if (count < MAX_COUNT) count++; 
       Px[count] = MIN_X_VIEW + (x - MIN_X_SCREEN) * x_scale;
       Py[count] = MAX_Y_VIEW + (y - MIN_Y_SCREEN) * y_scale;
+      place[count][0] = Px[count];
+      place[count][1] = Py[count];
       glutPostRedisplay();
    }
 }
 
 //---------------------------------------
-// Motion callback for OpenGL
+// Keyboard callback for OpenGL
 //---------------------------------------
-void motion(int x, int y)
+void keyboard(unsigned char key, int x, int y)
 {
-   // Calculate scale factors
-   float x_scale = (MAX_X_VIEW - MIN_X_VIEW) / 
-      (float)(MAX_X_SCREEN - MIN_X_SCREEN);
-   float y_scale = (MIN_Y_VIEW - MAX_Y_VIEW) / 
-      (float)(MAX_Y_SCREEN - MIN_Y_SCREEN);
-
-   // Handle mouse motion
-   Px[count] = MIN_X_VIEW + (x - MIN_X_SCREEN) * x_scale;
-   Py[count] = MAX_Y_VIEW + (y - MIN_Y_SCREEN) * y_scale;
-   glutPostRedisplay();
+    if(key == 's')
+    {
+        startSquare = true;
+    }
+    glutPostRedisplay();
 }
 
 //---------------------------------------
@@ -99,29 +100,35 @@ void display()
       glVertex2f(Px[i], Py[i]);
    glEnd();
 
-   // Connect control points
+   // Connect points
    glLineWidth(2);
    glBegin(GL_LINE_STRIP);
    for (int i=0; i<=count; i++)
       glVertex2f(Px[i], Py[i]);
    glEnd();
     
-   glVertex2f(Px[count], Py[count]);
-   glEnd();
-    
-    //Draw polygon
-    glBegin(GL_POLYGON);
-    glColor3f(0.5, 0.0, 1.0);
-    glVertex2f(-0.5, -0.5);
-    glVertex2f(-0.5, 0.5);
-    glColor3f(0.5, 0.0, 1.0);
-    glVertex2f(0.5, 0.5);
-    glVertex2f(0.5, -0.5);
-    glEnd();
-   
-   
+   // Draw the square at the current position
+   if (startSquare && position <= count)
+   {
+      glPushMatrix();
+      glTranslatef(Px[position], Py[position], 0.0);
+      
+      glBegin(GL_POLYGON);
+      glColor3f(0.5, 0.0, 1.0);
+      glVertex2f(-3.0, -3.0);
+      glVertex2f(-3.0, 3.0);
+      glVertex2f(3.0, 3.0);
+      glVertex2f(3.0, -3.0);
+      glEnd();
+
+      glPopMatrix();
+
+      position++; // Move to the next position
+   }
+
    glFlush();
 }
+
 
 //---------------------------------------
 // Main program
@@ -132,17 +139,16 @@ int main(int argc, char *argv[])
    glutInitWindowSize(MAX_Y_SCREEN, MAX_X_SCREEN);
    glutInitWindowPosition(MAX_Y_SCREEN/2, MAX_X_SCREEN/2);
    glutInitDisplayMode(GLUT_RGB | GLUT_SINGLE | GLUT_DEPTH);
-   glutCreateWindow("Lagrange");
+   glutCreateWindow("Flying Square");
    glutDisplayFunc(display);
+   glutKeyboardFunc(keyboard);
    glutMouseFunc(mouse);
-   glutMotionFunc(motion);
    init();
-   printf("Keyboard commands:\n");
-   printf("   TBA\n");
+   printf("Commands:\n");
    printf("Mouse operations:\n");
-   printf("   'mouse down' - start drawing line\n");
-   //rintf("   'mouse motion' - draw rubber-band line\n");
-   printf("   'mouse up' - finish drawing line\n");
+   printf("mouse down to start drawing line\n");
+   printf("mouse up to finish drawing line\n");
+   printf("Press S to show and move the square through each of the points in your path\n");
    glutMainLoop();
    return 0;
 }
