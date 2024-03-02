@@ -21,18 +21,17 @@
 #define MIN_Z_VIEW -50
 #define MAX_Z_VIEW 50
 #define MIN_X_SCREEN 0
-#define MAX_X_SCREEN 800
+#define MAX_X_SCREEN 500
 #define MIN_Y_SCREEN 0
-#define MAX_Y_SCREEN 800
+#define MAX_Y_SCREEN 500
 
 // Global variables 
-#define MAX_COUNT 20
+#define MAX_COUNT 30
 float Px[MAX_COUNT], Py[MAX_COUNT];
-int transX, transY;
 int count = -1;
 bool startSquare = false;
 float place [MAX_COUNT][MAX_COUNT];
-
+//timer
 int position = 0;
 
 //---------------------------------------
@@ -76,12 +75,21 @@ void mouse(int button, int state, int x, int y)
 //---------------------------------------
 void keyboard(unsigned char key, int x, int y)
 {
-    if(key == 's')
+    if(key == 'f')
     {
         startSquare = true;
     }
     glutPostRedisplay();
 }
+
+//---------------------------------------
+// Timer callback for OpenGL
+//---------------------------------------
+// void timerSquare(int val)
+// {
+//     glutPostRedisplay();
+//     glutTimerFunc(1000/50, timer, 0);
+// }
 
 //---------------------------------------
 // Display callback for OpenGL
@@ -100,14 +108,14 @@ void display()
       glVertex2f(Px[i], Py[i]);
    glEnd();
 
-   // Connect points
+   // Connect control points
    glLineWidth(2);
    glBegin(GL_LINE_STRIP);
    for (int i=0; i<=count; i++)
       glVertex2f(Px[i], Py[i]);
    glEnd();
     
-   // Draw the square at the current position
+   // Draw the square where the points are
    if (startSquare && position <= count)
    {
       glPushMatrix();
@@ -115,15 +123,15 @@ void display()
       
       glBegin(GL_POLYGON);
       glColor3f(0.5, 0.0, 1.0);
-      glVertex2f(-3.0, -3.0);
-      glVertex2f(-3.0, 3.0);
-      glVertex2f(3.0, 3.0);
-      glVertex2f(3.0, -3.0);
+      glVertex2f(-2.0, -2.0);
+      glVertex2f(-2.0, 2.0);
+      glVertex2f(2.0, 2.0);
+      glVertex2f(2.0, -2.0);
       glEnd();
 
       glPopMatrix();
 
-      position++; // Move to the next position
+      position++;
    }
 
    glFlush();
@@ -143,12 +151,13 @@ int main(int argc, char *argv[])
    glutDisplayFunc(display);
    glutKeyboardFunc(keyboard);
    glutMouseFunc(mouse);
+   //glutTimerFunc(timer)
    init();
    printf("Commands:\n");
    printf("Mouse operations:\n");
    printf("mouse down to start drawing line\n");
    printf("mouse up to finish drawing line\n");
-   printf("Press S to show and move the square through each of the points in your path\n");
+   printf("Press f to show and move the square through each of the points in your path\n");
    glutMainLoop();
    return 0;
 }
